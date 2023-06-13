@@ -46,6 +46,12 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`);
 });
 
+app.post("/login", (req, res) => {
+  const username = req.body["username"];
+  res.cookie("username", username);
+  res.redirect('/urls');
+});
+
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newLongURL = req.body["longURL"];
