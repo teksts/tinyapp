@@ -9,7 +9,17 @@ const urlDatabase = {
 };
 
 const users = {
+  
+};
 
+const getUserByEmail = (email) => {
+  for (const user in users) {
+    const existingEmail = users[user]["email"];
+    if (email === existingEmail) {
+      return user;
+    }
+  }
+  return null;
 };
 
 const generateRandomString = function () {
@@ -72,12 +82,19 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body["email"];
   const password = req.body["password"];
-  users[id] = {
-    id: id,
-    email: email,
-    password: password
-  };
-  res.cookie('user_id', id);
+  if (!email || !password) {
+    res.status(400).end;
+  } else if (getUserByEmail(email)) {
+    console.log('duplicated!');
+    res.status(400).end;
+  } else {
+    users[id] = {
+      id: id,
+      email: email,
+      password: password
+    };
+    res.cookie('user_id', id);
+  }
   console.log(users);
   res.redirect('/urls');
 });
