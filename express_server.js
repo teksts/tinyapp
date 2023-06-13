@@ -8,6 +8,10 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+
+};
+
 const generateRandomString = function () {
   let result = '';
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -32,11 +36,23 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
   const templateVars = {
-    username: req.cookies["username"],
+    user: user,
     urls: urlDatabase
   };
   res.render("urls_index", templateVars);
+});
+
+app.get("/register", (req, res) => {
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  const templateVars = {
+    user: user,
+    urls: urlDatabase
+  };
+  res.render("register", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
@@ -50,6 +66,20 @@ app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   urlDatabase[id] = longURL;
   res.redirect(`/urls/${id}`);
+});
+
+app.post("/register", (req, res) => {
+  const id = generateRandomString();
+  const email = req.body["email"];
+  const password = req.body["password"];
+  users[id] = {
+    id: id,
+    email: email,
+    password: password
+  };
+  res.cookie('user_id', id);
+  console.log(users);
+  res.redirect('/urls');
 });
 
 app.post("/login", (req, res) => {
@@ -79,7 +109,9 @@ app.post("/urls/:id/delete", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const longURL = urlDatabase[id];
-  const templateVars = { id, longURL };
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  const templateVars = { user, id, longURL };
   res.render("urls_show", templateVars);
 });
 
