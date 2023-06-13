@@ -25,6 +25,7 @@
           <tr>
             <th scope="col">Short URL ID</th>
             <th scope="col">Long URL</th>
+            <th scope="col">Edit</th>
             <th scope="col">Delete</th>
           </tr>
         </thead>
@@ -33,12 +34,17 @@
             <tr>
               <td><%= id %></td>
               <td><%= urls[id] %></td>
+              <% const editURL = `/urls/${id}` %>
+              <td>
+                <form method="GET" action=<%= editURL %> >
+                  <button type="submit" class="btn btn-primary">Edit</button>
+                </form>
+              </td>
               <% const deleteURL = `/urls/${id}/delete` %>
               <td>
                 <form method="POST" action=<%= deleteURL %> >
                   <button type="submit" class="btn btn-primary">Delete</button>
                 </form>
-  
               </td>
             </tr>
           <% } %>
