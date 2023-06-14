@@ -16,7 +16,7 @@ const getUserByEmail = (email) => {
   for (const user in users) {
     const existingEmail = users[user]["email"];
     if (email === existingEmail) {
-      return user;
+      return users[user];
     }
   }
   return null;
@@ -93,10 +93,10 @@ app.post("/register", (req, res) => {
   const email = req.body["email"];
   const password = req.body["password"];
   if (!email || !password) {
-    res.status(400).end;
+    res.status(400).send('An email or password was missing from your submission, please try again.');
   } else if (getUserByEmail(email)) {
     console.log('duplicated!');
-    res.status(400).end;
+    res.status(400).send('That account already exists');
   } else {
     users[id] = {
       id: id,
@@ -110,14 +110,29 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const username = req.body["username"];
-  res.cookie("username", username);
-  res.redirect('/urls');
+  const email = req.body["email"];
+  const password = req.body["password"];
+  if (!email || !password) {
+    res.status(400).send('An email or password was missing from your submission, please try again.');
+  }
+  const user = getUserByEmail(email);
+  if (user) {
+    if (password === user["password"]) {
+      res.cookie("user_id", user["id"]);
+      res.redirect('/urls');
+    } else {
+      console.log(password, user);
+      res.status(403).send('Incorrect password.');
+    }
+  } else {
+    res.status(403).send('No account was found with that email address');
+  }
 });
 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect('/urls');
+  // res.status(200).send("Successfully logged out");
+  res.redirect('/login');
 });
 
 app.post("/urls/:id", (req, res) => {
