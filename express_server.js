@@ -23,15 +23,7 @@ const getUserByEmail = (email) => {
 };
 
 const generateRandomString = function () {
-  let result = '';
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charactersLength = characters.length;
-  let counter = 0;
-  while (counter < 6) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    counter += 1;
-  }
-  return result;
+  return Math.random().toString(36).substring(2, 8);
 };
 
 
@@ -56,36 +48,56 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const userId = req.cookies["user_id"];
-  const user = users[userId];
-  const templateVars = {
-    user,
-    urls: urlDatabase
-  };
-  res.render("register", templateVars);
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    const user = null;
+    const templateVars = {
+      user,
+      urls: urlDatabase
+    };
+    res.render("register", templateVars);
+  }
 });
 
 app.get("/login", (req, res) => {
-  const userId = req.cookies["user_id"];
-  const user = users[userId];
-  const templateVars = {
-    user,
-    urls: urlDatabase
-  };
-  res.render("login", templateVars);
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    const user = null;
+    const templateVars = {
+      user,
+      urls: urlDatabase
+    };
+    res.render("login", templateVars);
+  }
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+  if (req.cookies["user_id"]) {
+    const templateVars = {
+      user
+    };
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
+  }
 });
 
 
 app.post("/urls", (req, res) => {
-  const longURL = req.body["longURL"];
-  const id = generateRandomString();
-  console.log(req.body); // Log the POST request body to the console
-  urlDatabase[id] = longURL;
-  res.redirect(`/urls/${id}`);
+  const userId = req.cookies["user_id"];
+  if (userId) {
+    const longURL = req.body["longURL"];
+    const id = generateRandomString();
+    console.log(req.body); // Log the POST request body to the console
+    urlDatabase[id] = longURL;
+    res.redirect(`/urls/${id}`);
+  } else {
+    res.status(401).send("You are not logged in. Please log in to shorten a new URL");
+  }
 });
 
 app.post("/register", (req, res) => {
@@ -150,17 +162,25 @@ app.post("/urls/:id/delete", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
-  const longURL = urlDatabase[id];
-  const userId = req.cookies["user_id"];
-  const user = users[userId];
-  const templateVars = { user, id, longURL };
-  res.render("urls_show", templateVars);
+  if (urlDatabase[id]) {
+    const longURL = urlDatabase[id];
+    const userId = req.cookies["user_id"];
+    const user = users[userId];
+    const templateVars = { user, id, longURL };
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(404).send("Oops! No URL with that alias has been created :(");
+  }
 });
 
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
-  const longURL = urlDatabase[id];
-  res.redirect(longURL);
+  if (urlDatabase[id]) {
+    const longURL = urlDatabase[id];
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("Oops! No URL with that alias has been created :(");
+  }
 });
 
 app.get("/urls.json", (req, res) => {
