@@ -1,7 +1,7 @@
 const { object } = require("joi");
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const { getUserByEmail, generateRandomString } = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
@@ -20,16 +20,6 @@ const urlDatabase = {
 const users = {
 };
 
-const urlsForUser = (id) => {
-  const urlsForThisUser = Object.keys(urlDatabase)
-    .filter(key => urlDatabase[key]["userId"] === id)
-    .reduce((cur, key) => {
-      return Object.assign(cur, { [key]: urlDatabase[key] });
-    }, {});
-  return urlsForThisUser;
-};
-
-
 app.set("view engine", "ejs");
 app.use(cookieSession({
   name: "session",
@@ -43,18 +33,50 @@ app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
+// View all of a user's shortened URLs
 app.get("/urls", (req, res) => {
   const userId = req.session["user_id"];
   const user = users[userId];
   if (userId) {
-    const urlsForThisUser = urlsForUser(userId);
+    const urls = urlsForUser(userId, urlDatabase);
     const templateVars = {
       user,
-      urls: urlsForThisUser
+      urls
     };
     res.render("urls_index", templateVars);
   } else {
     res.status(401).send('You must be logged in to view your shortened URLs');
+  }
+});
+
+app.get("/urls/new", (req, res) => {
+  const userId = req.session["user_id"];
+  const user = users[userId];
+  if (userId) {
+    const templateVars = {
+      user
+    };
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
+  }
+});
+
+// View a specific shortened URL
+app.get("/urls/:id", (req, res) => {
+  const urlId = req.params.id;
+  if (urlDatabase[urlId]) {
+    const userId = req.session["user_id"];
+    const user = users[userId];
+    if (urlDatabase[urlId]["userId"] === userId) {
+      const longURL = urlDatabase[urlId]["longURL"];
+      const templateVars = { user, urlId, longURL };
+      res.render("urls_show", templateVars);
+    } else {
+      res.status(401).send("That alias belongs to another user");
+    }
+  } else {
+    res.status(404).send("Oops! No URL with that alias has been created :(");
   }
 });
 
@@ -82,18 +104,6 @@ app.get("/login", (req, res) => {
   }
 });
 
-app.get("/urls/new", (req, res) => {
-  const userId = req.session["user_id"];
-  const user = users[userId];
-  if (userId) {
-    const templateVars = {
-      user
-    };
-    res.render("urls_new", templateVars);
-  } else {
-    res.redirect("/login");
-  }
-});
 
 
 app.post("/urls", (req, res) => {
@@ -191,22 +201,6 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
-app.get("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  if (urlDatabase[id]) {
-    const userId = req.session["user_id"];
-    const user = users[userId];
-    if (urlDatabase[id]["userId"] === userId) {
-      const longURL = urlDatabase[id]["longURL"];
-      const templateVars = { user, id, longURL };
-      res.render("urls_show", templateVars);
-    } else {
-      res.status(401).send("That alias belongs to another user");
-    }
-  } else {
-    res.status(404).send("Oops! No URL with that alias has been created :(");
-  }
-});
 
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
@@ -220,6 +214,12 @@ app.get("/u/:id", (req, res) => {
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
+});
+
+app.get("/clear-cookies", (req, res) => {
+  res.clearCookie("session");
+  res.clearCookie("session.sig");
+  res.send("Cookies cleared!");
 });
 
 app.get("/hello", (req, res) => {
