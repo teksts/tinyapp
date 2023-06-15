@@ -2,7 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const { object } = require("joi");
 
 const urlDatabase = {
@@ -44,7 +44,10 @@ const generateRandomString = function () {
 
 
 app.set("view engine", "ejs");
-app.use(cookieParser());
+app.use(cookieSession({
+  name: "session",
+  keys: ["key1", "key2"]
+}));
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -54,9 +57,9 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session["user_id"];
   const user = users[userId];
-  if (req.cookies["user_id"]) {
+  if (userId) {
     const urlsForThisUser = urlsForUser(userId);
     const templateVars = {
       user,
@@ -69,7 +72,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session["user_id"]) {
     res.redirect("/urls");
   } else {
     const user = null;
@@ -81,7 +84,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  if (req.cookies["user_id"]) {
+  if (req.session["user_id"]) {
     res.redirect("/urls");
   } else {
     const user = null;
@@ -93,9 +96,9 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session["user_id"];
   const user = users[userId];
-  if (req.cookies["user_id"]) {
+  if (userId) {
     const templateVars = {
       user
     };
@@ -107,13 +110,13 @@ app.get("/urls/new", (req, res) => {
 
 
 app.post("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session["user_id"];
   if (userId) {
     const longURL = req.body["longURL"];
     const id = generateRandomString();
     urlDatabase[id] = {
       longURL,
-      userId: req.cookies["user_id"]
+      userId
     };
     res.redirect(`/urls/${id}`);
   } else {
@@ -136,7 +139,7 @@ app.post("/register", (req, res) => {
       email,
       password
     };
-    res.cookie('user_id', id);
+    req.session["user_id"] = id;
   }
   console.log(users);
   res.redirect('/urls');
@@ -151,7 +154,7 @@ app.post("/login", (req, res) => {
   const user = getUserByEmail(email);
   if (user) {
     if (bcrypt.compareSync(password, user["password"])) {
-      res.cookie("user_id", user["id"]);
+      req.session["user_id"] = user["id"];
       res.redirect('/urls');
     } else {
       console.log(password, user);
@@ -163,14 +166,14 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  res.clearCookie("session");
   // res.status(200).send("Successfully logged out");
   res.redirect('/login');
 });
 
 //When does this get called again?
 app.post("/urls/:id", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session["user_id"];
   const id = req.params.id;
   if (!urlDatabase[id]) {
     res.status(404).send("That alias does not exist");
@@ -186,7 +189,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session["user_id"];
   const id = req.params.id;
   if (!urlDatabase[id]) {
     res.status(404).send("That alias does not exist");
@@ -203,7 +206,7 @@ app.post("/urls/:id/delete", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id]) {
-    const userId = req.cookies["user_id"];
+    const userId = req.session["user_id"];
     const user = users[userId];
     if (urlDatabase[id]["userId"] === userId) {
       const longURL = urlDatabase[id]["longURL"];
