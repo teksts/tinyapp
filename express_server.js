@@ -18,7 +18,8 @@ const urlDatabase = {
   "9sm5xK": {
     "longURL": "http://www.google.com",
     "userId": "bbbbbb",
-    "visits": {
+    "visitCount": 0,
+    "uniqueVisits": {
       "baba123": 10
     }
   }
@@ -134,11 +135,13 @@ app.post("/urls", (req, res) => {
   if (userId) {
     const longURL = req.body["longURL"];
     const newId = generateRandomString();
-    const visits = {};
+    const visitCount = 0;
+    const uniqueVisits = {};
     urlDatabase[newId] = {
       longURL,
       userId,
-      visits
+      visitCount,
+      uniqueVisits
     };
     res.redirect(`/urls/${newId}`);
   } else {
@@ -242,10 +245,10 @@ app.get("/u/:id", (req, res) => {
   if (urlDatabase[urlId]) {
     const longURL = urlDatabase[urlId]["longURL"];
     const visitorId = req.permanent["visitor_id"];
-    const visits = urlDatabase[urlId]["visits"];
-    const visitors = Object.keys(urlDatabase[urlId]["visits"]);
-    if (!visitors.includes(visitorId)) {
-      visits[visitorId] = getTimestamp();
+    const uniqueVisits = urlDatabase[urlId]["uniqueVisits"];
+    const uniqueVisitors = Object.keys(uniqueVisits);
+    if (!uniqueVisitors.includes(visitorId)) {
+      uniqueVisits[visitorId] = getTimestamp();
     }
     res.redirect(longURL);
   } else {
