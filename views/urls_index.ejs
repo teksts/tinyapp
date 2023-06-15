@@ -33,7 +33,9 @@
           <% for (let id in urls) { %>
             <tr>
               <td><%= id %></td>
-              <td><%= urls[id]["longURL"] %></td>
+              <td>
+                <a href="<%= urls[id]['longURL'] %>"</a><%= urls[id]["longURL"] %></a>
+              </td>
               <% const editURL = `/urls/${id}` %>
               <td>
                 <form method="GET" action=<%= editURL %> >

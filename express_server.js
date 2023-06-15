@@ -29,6 +29,12 @@ app.use(cookieSession({
 app.use(express.urlencoded({ extended: true }));
 
 
+
+///////////////////////////////
+//          GET
+///////////////////////////////
+
+// Dummy root landing site
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
@@ -49,6 +55,7 @@ app.get("/urls", (req, res) => {
   }
 });
 
+// Interface for creating a new shortened URL
 app.get("/urls/new", (req, res) => {
   const userId = req.session["user_id"];
   const user = users[userId];
@@ -80,6 +87,7 @@ app.get("/urls/:id", (req, res) => {
   }
 });
 
+// Page for registering an account
 app.get("/register", (req, res) => {
   if (req.session["user_id"]) {
     res.redirect("/urls");
@@ -92,6 +100,7 @@ app.get("/register", (req, res) => {
   }
 });
 
+// Pag for logging in to an account
 app.get("/login", (req, res) => {
   if (req.session["user_id"]) {
     res.redirect("/urls");
@@ -105,7 +114,11 @@ app.get("/login", (req, res) => {
 });
 
 
+///////////////////////////////
+//          POST
+///////////////////////////////
 
+// Create a new shortened URL and storing it in the database
 app.post("/urls", (req, res) => {
   const userId = req.session["user_id"];
   if (userId) {
@@ -121,6 +134,7 @@ app.post("/urls", (req, res) => {
   }
 });
 
+// Register a new account and store the new user in user database
 app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body["email"];
@@ -142,6 +156,7 @@ app.post("/register", (req, res) => {
   res.redirect('/urls');
 });
 
+// Log in to an existing account
 app.post("/login", (req, res) => {
   const email = req.body["email"];
   const password = req.body["password"];
@@ -163,13 +178,14 @@ app.post("/login", (req, res) => {
   }
 });
 
+// Log out of an account
 app.post("/logout", (req, res) => {
   res.clearCookie("session");
   // res.status(200).send("Successfully logged out");
   res.redirect('/login');
 });
 
-//When does this get called again?
+// Update the URL redirected to by an existing alias
 app.post("/urls/:id", (req, res) => {
   const userId = req.session["user_id"];
   const id = req.params.id;
@@ -186,6 +202,7 @@ app.post("/urls/:id", (req, res) => {
   }
 });
 
+// Delete a shortened URL
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session["user_id"];
   const id = req.params.id;
@@ -201,7 +218,7 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
-
+// Redirect to a URL using its corresponding alias
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   if (urlDatabase[id]) {
@@ -212,20 +229,16 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
+// Cookie reset route for easy testing
 app.get("/clear-cookies", (req, res) => {
   res.clearCookie("session");
   res.clearCookie("session.sig");
   res.send("Cookies cleared!");
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
+///////////////////////////////
+//        `LISTEN
+///////////////////////////////
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
