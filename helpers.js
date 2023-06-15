@@ -1,12 +1,13 @@
 // Retrieve a user object given a user's email and an object of user objects
 const getUserByEmail = (email, database) => {
-  for (const user in database) {
-    const existingEmail = database[user]["email"];
+  for (const userId in database) {
+    const existingEmail = database[userId]["email"];
+    console.log(email, existingEmail);
     if (email === existingEmail) {
-      return database[user];
+      return userId;
     }
   }
-  return null;
+  return undefined;
 };
 
 // Generate a random six character ID for new users and link aliases

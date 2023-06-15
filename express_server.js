@@ -1,7 +1,7 @@
 const { object } = require("joi");
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const { getUserByEmail, generateRandomString } = require("helpers");
+const { getUserByEmail, generateRandomString } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
@@ -117,7 +117,7 @@ app.post("/register", (req, res) => {
   const password = bcrypt.hashSync(req.body["password"], 10);
   if (!email || !password) {
     res.status(400).send('An email or password was missing from your submission, please try again.');
-  } else if (getUserByEmail(email)) {
+  } else if (getUserByEmail(email, users)) {
     console.log('duplicated!');
     res.status(400).send('That account already exists');
   } else {
@@ -138,16 +138,17 @@ app.post("/login", (req, res) => {
   if (!email || !password) {
     res.status(400).send('An email or password was missing from your submission, please try again.');
   }
-  const user = getUserByEmail(email);
-  if (user) {
-    if (bcrypt.compareSync(password, user["password"])) {
-      req.session["user_id"] = user["id"];
+  const userId = getUserByEmail(email, users);
+  if (userId) {
+    if (bcrypt.compareSync(password, users[userId]["password"])) {
+      req.session["user_id"] = userId;
       res.redirect('/urls');
     } else {
-      console.log(password, user);
+      console.log(password, userId);
       res.status(403).send('Incorrect password.');
     }
   } else {
+    console.log(userId);
     res.status(403).send('No account was found with that email address');
   }
 });
