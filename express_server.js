@@ -2,7 +2,7 @@ const { object } = require("joi");
 const express = require("express");
 const methodOverride = require("method-override");
 const bcrypt = require("bcryptjs");
-const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser, getTimestamp } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
@@ -10,11 +10,17 @@ const cookieSession = require('cookie-session');
 const urlDatabase = {
   "b2xVn2": {
     "longURL": "http://www.lighthouselabs.ca",
-    "userId": "bbbbbb"
+    "userId": "bbbbbb",
+    "visits": {
+      "baba123": 1
+    }
   },
   "9sm5xK": {
     "longURL": "http://www.google.com",
-    "userId": "bbbbbb"
+    "userId": "bbbbbb",
+    "visits": {
+      "baba123": 10
+    }
   }
 };
 
@@ -78,7 +84,10 @@ app.get("/urls/:id", (req, res) => {
     const user = users[userId];
     if (urlDatabase[urlId]["userId"] === userId) {
       const longURL = urlDatabase[urlId]["longURL"];
-      const templateVars = { user, urlId, longURL };
+      const templateVars = {
+        user,
+        urlId,
+        longURL };
       res.render("urls_show", templateVars);
     } else {
       res.status(401).send("That alias belongs to another user");
@@ -125,9 +134,11 @@ app.post("/urls", (req, res) => {
   if (userId) {
     const longURL = req.body["longURL"];
     const newId = generateRandomString();
+    const visits = {};
     urlDatabase[newId] = {
       longURL,
-      userId
+      userId,
+      visits
     };
     res.redirect(`/urls/${newId}`);
   } else {
@@ -140,17 +151,21 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body["email"];
   const password = bcrypt.hashSync(req.body["password"], 10);
+  // check whether email and password fields have been filled
   if (!email || !password) {
     res.status(400).send('An email or password was missing from your submission, please try again.');
+  // check whether an account already exists for that email
   } else if (getUserByEmail(email, users)) {
-    console.log('duplicated!');
     res.status(400).send('That account already exists');
+  // create new user account
   } else {
     users[id] = {
       id,
       email,
       password
     };
+    // create visitor tracking and session login cookies
+    req.permanent["visitor_id"] = generateRandomString();
     req.session["user_id"] = id;
   }
   console.log(users);
@@ -168,6 +183,9 @@ app.post("/login", (req, res) => {
   if (userId) {
     if (bcrypt.compareSync(password, users[userId]["password"])) {
       req.session["user_id"] = userId;
+      if (!req.permanent["visitor_id"]) {
+        req.permanent["visitor_id"] = generateRandomString();
+      }
       res.redirect('/urls');
     } else {
       console.log(password, userId);
@@ -203,7 +221,7 @@ app.put("/urls/:id", (req, res) => {
 });
 
 // Delete a shortened URL
-app.get("/urls/:id", (req, res) => {
+app.delete("/urls/:id", (req, res) => {
   const userId = req.session["user_id"];
   const id = req.params.id;
   if (!urlDatabase[id]) {
@@ -220,9 +238,15 @@ app.get("/urls/:id", (req, res) => {
 
 // Redirect to a URL using its corresponding alias
 app.get("/u/:id", (req, res) => {
-  const id = req.params.id;
-  if (urlDatabase[id]) {
-    const longURL = urlDatabase[id]["longURL"];
+  const urlId = req.params.id;
+  if (urlDatabase[urlId]) {
+    const longURL = urlDatabase[urlId]["longURL"];
+    const visitorId = req.permanent["visitor_id"];
+    const visits = urlDatabase[urlId]["visits"];
+    const visitors = Object.keys(urlDatabase[urlId]["visits"]);
+    if (!visitors.includes(visitorId)) {
+      visits[visitorId] = getTimestamp();
+    }
     res.redirect(longURL);
   } else {
     res.status(404).send("Oops! No URL with that alias has been created :(");
@@ -230,7 +254,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 // Cookie reset route for easy testing
-app.delete("/clear-cookies", (req, res) => {
+app.get("/clear-cookies", (req, res) => {
   res.clearCookie("session");
   res.clearCookie("session.sig");
   res.send("Cookies cleared!");
