@@ -19,22 +19,34 @@
       </div>
     </div>
     <% if (!user) { %>
-    <div>
-      <a href="/Register">Register</a>
     </div>
-    <div>
-      <a href="/login">Login</a>
-    </div>
-    <% } else { %>
-    <div>
-      <%= user["email"] %>
-    </div>
-    <div>
-      <form action="/logout" method="POST">
-        <div>
-          <button type="submit" class="btn btn-primary">Logout</button>
+    <div class="navbar-nav">
+      <form action="/register" method="GET">
+        <div class="nav-item nav-link">
+          <button type="submit" class="btn btn-primary">Register</button>
         </div>
       </form>
+    </div>
+  </div>
+  <div class="navbar-nav">
+    <form action="/login" method="GET">
+      <div class="nav-item nav-link">
+        <button type="submit" class="btn btn-primary">Login</button>
+      </div>
+    </form>
+  </div>
+    <% } else { %>
+    <div class="navbar-nav">
+      <div class="nav-item nav-link">
+        <%= user["email"] %>
+      </div>
+      <div>
+        <form action="/logout" method="POST">
+          <div>
+            <button type="submit" class="btn btn-primary">Logout</button>
+          </div>
+        </form>
+      </div>
     </div>
     <% } %>
   </nav>

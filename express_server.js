@@ -123,12 +123,12 @@ app.post("/urls", (req, res) => {
   const userId = req.session["user_id"];
   if (userId) {
     const longURL = req.body["longURL"];
-    const id = generateRandomString();
-    urlDatabase[id] = {
+    const newId = generateRandomString();
+    urlDatabase[newId] = {
       longURL,
       userId
     };
-    res.redirect(`/urls/${id}`);
+    res.redirect(`/urls/${newId}`);
   } else {
     res.status(401).send("You are not logged in. Please log in to shorten a new URL");
   }
@@ -181,7 +181,6 @@ app.post("/login", (req, res) => {
 // Log out of an account
 app.post("/logout", (req, res) => {
   res.clearCookie("session");
-  // res.status(200).send("Successfully logged out");
   res.redirect('/login');
 });
 
@@ -192,7 +191,7 @@ app.post("/urls/:id", (req, res) => {
   if (!urlDatabase[id]) {
     res.status(404).send("That alias does not exist");
   } else if (!userId) {
-    res.status(401).send("You are not logged in. Please log in to update a URL alias");
+    res.status(401).send("You are not logged in, please log in to update a URL alias");
   } else if (urlDatabase[id]["userId"] !== userId) {
     res.status(401).send("That alias belongs to another user");
   } else {
@@ -209,7 +208,7 @@ app.post("/urls/:id/delete", (req, res) => {
   if (!urlDatabase[id]) {
     res.status(404).send("That alias does not exist");
   } else if (!userId) {
-    res.status(401).send("You are not logged in. Please log in to update a URL alias");
+    res.status(401).send("You are not logged in, please log in to update a URL alias");
   } else if (urlDatabase[id]["userId"] !== userId) {
     res.status(401).send("That alias belongs to another user");
   } else {
