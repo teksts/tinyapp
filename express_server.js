@@ -1,5 +1,6 @@
 const { object } = require("joi");
 const express = require("express");
+const methodOverride = require("method-override");
 const bcrypt = require("bcryptjs");
 const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 const app = express();
@@ -25,7 +26,7 @@ app.use(cookieSession({
   name: "session",
   keys: ["key1", "key2"]
 }));
-
+app.use(methodOverride("_method"));
 app.use(express.urlencoded({ extended: true }));
 
 
@@ -185,7 +186,7 @@ app.post("/logout", (req, res) => {
 });
 
 // Update the URL redirected to by an existing alias
-app.post("/urls/:id", (req, res) => {
+app.put("/urls/:id", (req, res) => {
   const userId = req.session["user_id"];
   const id = req.params.id;
   if (!urlDatabase[id]) {
@@ -202,7 +203,7 @@ app.post("/urls/:id", (req, res) => {
 });
 
 // Delete a shortened URL
-app.post("/urls/:id/delete", (req, res) => {
+app.get("/urls/:id", (req, res) => {
   const userId = req.session["user_id"];
   const id = req.params.id;
   if (!urlDatabase[id]) {
@@ -229,7 +230,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 // Cookie reset route for easy testing
-app.get("/clear-cookies", (req, res) => {
+app.delete("/clear-cookies", (req, res) => {
   res.clearCookie("session");
   res.clearCookie("session.sig");
   res.send("Cookies cleared!");

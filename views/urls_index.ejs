@@ -42,7 +42,7 @@
                   <button type="submit" class="btn btn-primary">Edit</button>
                 </form>
               </td>
-              <% const deleteURL = `/urls/${id}/delete` %>
+              <% const deleteURL = `/urls/${id}?_method=DELETE` %>
               <td>
                 <form method="POST" action=<%= deleteURL %> >
                   <button type="submit" class="btn btn-primary">Delete</button>
