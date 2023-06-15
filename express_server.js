@@ -1,9 +1,10 @@
+const { object } = require("joi");
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const { getUserByEmail, generateRandomString } = require("helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
-const { object } = require("joi");
 
 const urlDatabase = {
   "b2xVn2": {
@@ -19,16 +20,6 @@ const urlDatabase = {
 const users = {
 };
 
-const getUserByEmail = (email) => {
-  for (const user in users) {
-    const existingEmail = users[user]["email"];
-    if (email === existingEmail) {
-      return users[user];
-    }
-  }
-  return null;
-};
-
 const urlsForUser = (id) => {
   const urlsForThisUser = Object.keys(urlDatabase)
     .filter(key => urlDatabase[key]["userId"] === id)
@@ -36,10 +27,6 @@ const urlsForUser = (id) => {
       return Object.assign(cur, { [key]: urlDatabase[key] });
     }, {});
   return urlsForThisUser;
-};
-
-const generateRandomString = function () {
-  return Math.random().toString(36).substring(2, 8);
 };
 
 
