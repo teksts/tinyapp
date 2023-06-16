@@ -18,7 +18,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 ## Getting Started
 
 - Install all dependencies (using the `npm install` command).
-- Run the development web server using the `node express_server.js` command.
+- Run the development web server using the `npm run start` command.
 
 ## Features
 TinyApp provides a simple and straightforward interface for shortening links. Users can edit destination URLs assigned to aliases after links have been shortened, which can prove very useful for team work environments. If you're sharing resources that change often with a team, and find that it's a pain to make sure everyone is making use of the correct shortened URL as focus shifts from page to page, fear no more! With TinyApp, simply generate once, distribute that link, and edit its target as suits your needs.

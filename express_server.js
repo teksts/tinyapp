@@ -1,4 +1,3 @@
-const { object } = require("joi");
 const express = require("express");
 const methodOverride = require("method-override");
 const bcrypt = require("bcryptjs");
@@ -6,32 +5,7 @@ const { getUserByEmail, generateRandomString, urlsForUser, getTimestamp, makeYea
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
-
-const urlDatabase = {
-  "b2xVn2": {
-    "longURL": "http://www.lighthouselabs.ca",
-    "userId": "bbbbbb",
-    "uniqueVisits": {
-      "baba123": 1
-    }
-  },
-  "9sm5xK": {
-    "longURL": "http://www.google.com",
-    "userId": "bbbbbb",
-    "visitCount": 0,
-    "uniqueVisits": {
-      "baba123": 10
-    }
-  }
-};
-
-const users = {
-  "bbbbbb": {
-    id: "bbbbbb",
-    email: "a@a.com",
-    password: "a"
-  }
-};
+const {urlDatabase, users} = require("./databases");
 
 app.set("view engine", "ejs");
 app.use(cookieSession({
@@ -40,8 +14,6 @@ app.use(cookieSession({
 }));
 app.use(methodOverride("_method"));
 app.use(express.urlencoded({ extended: true }));
-
-
 
 ///////////////////////////////
 //          GET
@@ -201,15 +173,16 @@ app.post("/urls", (req, res) => {
 app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body["email"];
-  const password = bcrypt.hashSync(req.body["password"], 10);
+  let password = req.body["password"];
   // check whether email and password fields have been filled
   if (!email || !password) {
     res.status(400).send('An email or password was missing from your submission, please try again.');
-  // check whether an account already exists for that email
+    // check whether an account already exists for that email
   } else if (getUserByEmail(email, users)) {
     res.status(400).send('That account already exists');
-  // create new user account
+    // create new user account
   } else {
+    password = bcrypt.hashSync(req.body["password"], 10);
     users[id] = {
       id,
       email,
@@ -249,7 +222,7 @@ app.post("/login", (req, res) => {
 
 // Log out of an account
 app.post("/logout", (req, res) => {
-  res.clearCookie("session");
+  req.session = null;
   res.redirect('/login');
 });
 
