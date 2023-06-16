@@ -27,10 +27,17 @@ const urlsForUser = (id, database) => {
   return urlsForThisUser;
 };
 
-const getTimestamp = () => {
-  const currentTime = new Date();
-  const timestamp = currentTime.getTime();
+const getTimestamp = (date) => {
+  const currentTime = date.toJSON();
+  const timestamp = `${currentTime.slice(0, 10)} ${currentTime.slice(12, 22)}`;
   return timestamp;
+};
+
+// Generate the current date in Year-Month-Day format
+const makeYearMonthDayDate = (date) => {
+  let currentDate = date.toJSON().slice(0, 10);
+  return currentDate;
+
 };
 
 // Generate a random six character ID for new users and link aliases
@@ -38,4 +45,4 @@ const generateRandomString = function() {
   return Math.random().toString(36).substring(2, 8);
 };
 
-module.exports = { getUserByEmail, generateRandomString, urlsForUser, getTimestamp };
+module.exports = { getUserByEmail, generateRandomString, urlsForUser, getTimestamp, makeYearMonthDayDate };

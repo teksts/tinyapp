@@ -2,17 +2,17 @@
     <h1>Visitors!</h1>
     <table>
       <tr>
-        <td>Total Visits</td>
+        <td>Total Visits:</td>
         <td><%= visitCount %></td>
       </tr>
       <tr>
-        <td>Unique Visitors</td>
-        <% for (const visitor in uniqueVisitors) { %>
-        <tr>
-          <td><%= visitor %></td>
-          <td><%= uniqueVisitors[visitor] %></td>
-        </tr>
-        <% } %>
+        <td>Unique Visitors:</td>
       </tr>
+      <% for (const visitor in uniqueVisitors) { %>
+      <tr>
+        <td><%= visitor %></td>
+        <td><%= uniqueVisitors[visitor] %></td>
+      </tr>
+      <% } %>
     </table>
   </body>

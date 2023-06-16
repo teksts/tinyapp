@@ -2,7 +2,7 @@ const { object } = require("joi");
 const express = require("express");
 const methodOverride = require("method-override");
 const bcrypt = require("bcryptjs");
-const { getUserByEmail, generateRandomString, urlsForUser, getTimestamp } = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser, getTimestamp, makeYearMonthDayDate } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 const cookieSession = require('cookie-session');
@@ -49,7 +49,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Dummy root landing site
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  if (req.session["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
 });
 
 // View all of a user's shortened URLs
@@ -92,12 +96,12 @@ app.get("/urls/:id", (req, res) => {
       const longURL = urlDatabase[urlId]["longURL"];
       const visitCount = urlDatabase[urlId]["visitCount"];
       const uniqueVisitors = urlDatabase[urlId]["uniqueVisits"];
-      console.log("urlDatabase in urls_show route:", urlDatabase);
-      console.log("Unique visitors for this link:", uniqueVisitors);
+      const dateMade = urlDatabase[urlId]["dateMade"];
       const templateVars = {
         user,
         urlId,
         longURL,
+        dateMade,
         visitCount,
         uniqueVisitors };
       res.render("urls_show", templateVars);
@@ -122,7 +126,7 @@ app.get("/register", (req, res) => {
   }
 });
 
-// Pag for logging in to an account
+// Page for logging in to an account
 app.get("/login", (req, res) => {
   if (req.session["user_id"]) {
     res.redirect("/urls");
@@ -135,6 +139,34 @@ app.get("/login", (req, res) => {
   }
 });
 
+// Redirect to a URL using its corresponding alias
+app.get("/u/:id", (req, res) => {
+  const urlId = req.params.id;
+  if (urlDatabase[urlId]) {
+    const longURL = urlDatabase[urlId]["longURL"];
+    const visitorId = req.session["visitor_id"];
+    // increment total views
+    urlDatabase[urlId]["visitCount"]++;
+    const uniqueVisits = urlDatabase[urlId]["uniqueVisits"];
+    const uniqueVisitors = Object.keys(uniqueVisits);
+    // add this visitor to list of unique visitors if they haven't used this alias previously
+    if (!uniqueVisitors.includes(visitorId)) {
+      uniqueVisits[visitorId] = getTimestamp(new Date());
+    }
+    console.log(urlDatabase[urlId]);
+    console.log(urlDatabase);
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("Oops! No URL with that alias has been created :(");
+  }
+});
+
+// Cookie reset route for easy testing
+app.get("/clear-cookies", (req, res) => {
+  res.clearCookie("session");
+  res.clearCookie("session.sig");
+  res.send("Cookies cleared!");
+});
 
 ///////////////////////////////
 //          POST
@@ -146,11 +178,13 @@ app.post("/urls", (req, res) => {
   if (userId) {
     const longURL = req.body["longURL"];
     const newId = generateRandomString();
+    const dateMade = makeYearMonthDayDate(new Date());
     const visitCount = 0;
     const uniqueVisits = {};
     urlDatabase[newId] = {
       longURL,
       userId,
+      dateMade,
       visitCount,
       uniqueVisits
     };
@@ -190,9 +224,11 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body["email"];
   const password = req.body["password"];
+  // check whether email and password fields have been filled
   if (!email || !password) {
     res.status(400).send('An email or password was missing from your submission, please try again.');
   }
+  // check whether submitted password matches password in database for that account
   const userId = getUserByEmail(email, users);
   if (userId) {
     if (bcrypt.compareSync(password, users[userId]["password"])) {
@@ -215,6 +251,10 @@ app.post("/logout", (req, res) => {
   res.redirect('/login');
 });
 
+///////////////////////////////
+//          PUT
+///////////////////////////////
+
 // Update the URL redirected to by an existing alias
 app.put("/urls/:id", (req, res) => {
   const userId = req.session["user_id"];
@@ -232,6 +272,10 @@ app.put("/urls/:id", (req, res) => {
   }
 });
 
+///////////////////////////////
+//          DELETE
+///////////////////////////////
+
 // Delete a shortened URL
 app.delete("/urls/:id", (req, res) => {
   const userId = req.session["user_id"];
@@ -239,7 +283,7 @@ app.delete("/urls/:id", (req, res) => {
   if (!urlDatabase[id]) {
     res.status(404).send("That alias does not exist");
   } else if (!userId) {
-    res.status(401).send("You are not logged in, please log in to update a URL alias");
+    res.status(401).send("You are not logged in, please log in to delete a URL alias");
   } else if (urlDatabase[id]["userId"] !== userId) {
     res.status(401).send("That alias belongs to another user");
   } else {
@@ -248,35 +292,9 @@ app.delete("/urls/:id", (req, res) => {
   }
 });
 
-// Redirect to a URL using its corresponding alias
-app.get("/u/:id", (req, res) => {
-  const urlId = req.params.id;
-  if (urlDatabase[urlId]) {
-    const longURL = urlDatabase[urlId]["longURL"];
-    const visitorId = req.session["visitor_id"];
-    urlDatabase[urlId]["visitCount"]++;
-    const uniqueVisits = urlDatabase[urlId]["uniqueVisits"];
-    const uniqueVisitors = Object.keys(uniqueVisits);
-    if (!uniqueVisitors.includes(visitorId)) {
-      uniqueVisits[visitorId] = getTimestamp();
-    }
-    console.log(urlDatabase[urlId]);
-    console.log(urlDatabase);
-    res.redirect(longURL);
-  } else {
-    res.status(404).send("Oops! No URL with that alias has been created :(");
-  }
-});
-
-// Cookie reset route for easy testing
-app.get("/clear-cookies", (req, res) => {
-  res.clearCookie("session");
-  res.clearCookie("session.sig");
-  res.send("Cookies cleared!");
-});
 
 ///////////////////////////////
-//        `LISTEN
+//        LISTEN
 ///////////////////////////////
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
