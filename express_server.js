@@ -153,8 +153,6 @@ app.get("/u/:id", (req, res) => {
     if (!uniqueVisitors.includes(visitorId)) {
       uniqueVisits[visitorId] = getTimestamp(new Date());
     }
-    console.log(urlDatabase[urlId]);
-    console.log(urlDatabase);
     res.redirect(longURL);
   } else {
     res.status(404).send("Oops! No URL with that alias has been created :(");
@@ -215,7 +213,6 @@ app.post("/register", (req, res) => {
     // create visitor tracking and session login cookies
     req.session["visitor_id"] = generateRandomString();
     req.session["user_id"] = id;
-    console.log(req.session);
     res.redirect('/urls');
   }
 });

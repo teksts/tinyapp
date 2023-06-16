@@ -2,7 +2,6 @@
 const getUserByEmail = (email, database) => {
   for (const userId in database) {
     const existingEmail = database[userId]["email"];
-    console.log(email, existingEmail);
     if (email === existingEmail) {
       return userId;
     }
@@ -23,7 +22,6 @@ const urlsForUser = (id, database) => {
     .reduce((objectOfLinks, key) => {
       return Object.assign(objectOfLinks, { [key]: database[key] });
     }, {});
-  console.log(urlsForThisUser);
   return urlsForThisUser;
 };
 

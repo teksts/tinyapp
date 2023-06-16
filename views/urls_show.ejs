@@ -25,12 +25,12 @@
     </div>
     <form class="form-inline" action="/urls/<%= urlId %>?_method=PUT" method="POST">
       <div class="form-group mb-2">
-        <label for="longURL">Enter a URL:</label>
+        <label for="longURL">Update this URL:</label>
         <input
         class="form-control"
         type="text"
         name="longURL"
-        placeholder="http://"
+        placeholder="<%= longURL %>" 
         style="width: 300px; margin: 1em"
         />
         <button type="submit" class="btn btn-primary">Submit</button>
