@@ -199,13 +199,12 @@ app.post("/register", (req, res) => {
 app.post("/login", (req, res) => {
   const email = req.body["email"];
   const password = req.body["password"];
+  const userId = getUserByEmail(email, users);
   // check whether email and password fields have been filled
   if (!email || !password) {
     res.status(400).send('An email or password was missing from your submission, please try again.');
-  }
   // check whether submitted password matches password in database for that account
-  const userId = getUserByEmail(email, users);
-  if (userId) {
+  } else if (userId) {
     if (bcrypt.compareSync(password, users[userId]["password"])) {
       req.session["user_id"] = userId;
       if (!req.session["visitor_id"]) {
