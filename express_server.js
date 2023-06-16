@@ -48,13 +48,6 @@ app.use(express.urlencoded({ extended: true }));
 ///////////////////////////////
 
 // Dummy root landing site
-app.get("/", (req, res) => {
-  if (req.session["user_id"]) {
-    res.redirect("/urls");
-  } else {
-    res.redirect("/login");
-  }
-});
 
 // View all of a user's shortened URLs
 app.get("/urls", (req, res) => {
@@ -144,6 +137,9 @@ app.get("/u/:id", (req, res) => {
   const urlId = req.params.id;
   if (urlDatabase[urlId]) {
     const longURL = urlDatabase[urlId]["longURL"];
+    if (!req.session["visitor_id"]) {
+      req.session["visitor_id"] = generateRandomString();
+    }
     const visitorId = req.session["visitor_id"];
     // increment total views
     urlDatabase[urlId]["visitCount"]++;
@@ -166,6 +162,15 @@ app.get("/clear-cookies", (req, res) => {
   res.send("Cookies cleared!");
 });
 
+  
+app.get("/", (req, res) => {
+  if (req.session["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
+});
+  
 ///////////////////////////////
 //          POST
 ///////////////////////////////
