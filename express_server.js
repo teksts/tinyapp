@@ -11,7 +11,7 @@ const urlDatabase = {
   "b2xVn2": {
     "longURL": "http://www.lighthouselabs.ca",
     "userId": "bbbbbb",
-    "visits": {
+    "uniqueVisits": {
       "baba123": 1
     }
   },
@@ -26,6 +26,11 @@ const urlDatabase = {
 };
 
 const users = {
+  "bbbbbb": {
+    id: "bbbbbb",
+    email: "a@a.com",
+    password: "a"
+  }
 };
 
 app.set("view engine", "ejs");
@@ -85,10 +90,16 @@ app.get("/urls/:id", (req, res) => {
     const user = users[userId];
     if (urlDatabase[urlId]["userId"] === userId) {
       const longURL = urlDatabase[urlId]["longURL"];
+      const visitCount = urlDatabase[urlId]["visitCount"];
+      const uniqueVisitors = urlDatabase[urlId]["uniqueVisits"];
+      console.log("urlDatabase in urls_show route:", urlDatabase);
+      console.log("Unique visitors for this link:", uniqueVisitors);
       const templateVars = {
         user,
         urlId,
-        longURL };
+        longURL,
+        visitCount,
+        uniqueVisitors };
       res.render("urls_show", templateVars);
     } else {
       res.status(401).send("That alias belongs to another user");
@@ -168,11 +179,11 @@ app.post("/register", (req, res) => {
       password
     };
     // create visitor tracking and session login cookies
-    req.permanent["visitor_id"] = generateRandomString();
+    req.session["visitor_id"] = generateRandomString();
     req.session["user_id"] = id;
+    console.log(req.session);
+    res.redirect('/urls');
   }
-  console.log(users);
-  res.redirect('/urls');
 });
 
 // Log in to an existing account
@@ -186,16 +197,14 @@ app.post("/login", (req, res) => {
   if (userId) {
     if (bcrypt.compareSync(password, users[userId]["password"])) {
       req.session["user_id"] = userId;
-      if (!req.permanent["visitor_id"]) {
-        req.permanent["visitor_id"] = generateRandomString();
+      if (!req.session["visitor_id"]) {
+        req.session["visitor_id"] = generateRandomString();
       }
       res.redirect('/urls');
     } else {
-      console.log(password, userId);
       res.status(403).send('Incorrect password.');
     }
   } else {
-    console.log(userId);
     res.status(403).send('No account was found with that email address');
   }
 });
@@ -244,12 +253,15 @@ app.get("/u/:id", (req, res) => {
   const urlId = req.params.id;
   if (urlDatabase[urlId]) {
     const longURL = urlDatabase[urlId]["longURL"];
-    const visitorId = req.permanent["visitor_id"];
+    const visitorId = req.session["visitor_id"];
+    urlDatabase[urlId]["visitCount"]++;
     const uniqueVisits = urlDatabase[urlId]["uniqueVisits"];
     const uniqueVisitors = Object.keys(uniqueVisits);
     if (!uniqueVisitors.includes(visitorId)) {
       uniqueVisits[visitorId] = getTimestamp();
     }
+    console.log(urlDatabase[urlId]);
+    console.log(urlDatabase);
     res.redirect(longURL);
   } else {
     res.status(404).send("Oops! No URL with that alias has been created :(");
